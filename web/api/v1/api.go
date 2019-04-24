@@ -50,6 +50,7 @@ type rpcRequest struct {
 	Endpoint string
 	Method   string
 	Address  string
+	URL      string
 	timeout  int
 	Request  interface{}
 }
@@ -83,7 +84,6 @@ func (api *API) webServices(w http.ResponseWriter, r *http.Request) {
 
 	webServices := make([]*registry.Service, 0)
 	for _, s := range services {
-
 		if strings.Index(s.Name, namespace) == 0 && len(strings.TrimPrefix(s.Name, namespace)) > 0 {
 			s.Name = strings.Replace(s.Name, namespace+".", "", 1)
 			webServices = append(webServices, s)
@@ -231,7 +231,7 @@ func (api *API) apiGatewayServices(w http.ResponseWriter, r *http.Request) {
 			filter := func(services []*registry.Service) []*registry.Service {
 				for _, s := range services {
 					for _, n := range s.Nodes {
-						if n.Metadata[metadata.MetadataFieldNameServerType] == metadata.MetadataServiceTypeAPIGateway {
+						if n.Metadata[metadata.NameServerType] == metadata.ServiceTypeAPIGateway {
 							ret = append(ret, s)
 							break
 						}
@@ -267,6 +267,7 @@ func (api *API) rpc(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rpcReq.timeout, _ = strconv.Atoi(r.Header.Get("Timeout"))
+	rpcReq.URL = r.URL.Path
 
 	rpc(w, helper.RequestToContext(r), rpcReq)
 }
@@ -278,6 +279,7 @@ func (api *API) health(w http.ResponseWriter, r *http.Request) {
 		Service:  r.URL.Query().Get("service"),
 		Endpoint: "Debug.Health",
 		Request:  "{}",
+		URL:      r.URL.Path,
 		Address:  r.URL.Query().Get("address"),
 	}
 
